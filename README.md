@@ -127,7 +127,6 @@ Channel ID: 123456789012345678
 │
 ├── 🛠️ copy_tesseract.bat           # Auto-copy Tesseract untuk portable
 ├── 🛠️ test_portable_tesseract.py   # Test portable setup
-├── 🛠️ build_portable.bat           # Build portable EXE
 │
 └── 📚 Docs/
     ├── WEBHOOK_GUIDE.md             # Setup Discord webhook
