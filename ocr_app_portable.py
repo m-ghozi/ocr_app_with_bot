@@ -1,7 +1,7 @@
 """
-Simple Real-Time OCR Application with Discord Integration
+Simple Real-Time OCR Application with Discord Integration - PORTABLE VERSION
 Captures a customizable screen area and performs OCR in real-time.
-Works on Windows!
+Works on Windows - No Tesseract installation required!
 """
 
 import asyncio
@@ -16,23 +16,53 @@ from tkinter import ttk
 import pytesseract
 from PIL import ImageGrab
 
-# Windows-specific: Set tesseract path if needed
-# Uncomment and adjust path if you get "tesseract not found" error
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
+# Auto-detect Tesseract path (portable or installed)
+def get_tesseract_path():
+    """Auto-detect Tesseract executable path"""
+    # Check if running as bundled EXE
+    if getattr(sys, "frozen", False):
+        # Running as EXE - check for bundled Tesseract
+        exe_dir = os.path.dirname(sys.executable)
+        portable_tesseract = os.path.join(exe_dir, "tesseract", "tesseract.exe")
+
+        if os.path.exists(portable_tesseract):
+            print(f"✅ Using portable Tesseract: {portable_tesseract}")
+            return portable_tesseract
+
+    # Check script directory for portable Tesseract
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    portable_tesseract = os.path.join(script_dir, "tesseract", "tesseract.exe")
+
+    if os.path.exists(portable_tesseract):
+        print(f"✅ Using portable Tesseract: {portable_tesseract}")
+        return portable_tesseract
+
+    # Default installation path
+    default_path = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+    if os.path.exists(default_path):
+        print(f"✅ Using installed Tesseract: {default_path}")
+        return default_path
+
+    # Not found - will use system PATH
+    print("⚠️  Tesseract not found, using system PATH")
+    return "tesseract"
+
+
+# Set Tesseract path
+pytesseract.pytesseract.tesseract_cmd = get_tesseract_path()
 
 # Config file untuk menyimpan Discord settings
 CONFIG_FILE = "ocr_config.json"
 
-# Import Discord bot (akan gagal secara graceful jika discord.py belum terinstall)
+# Import Discord bot (webhook-based, lightweight)
 try:
-    # from discord_bot import DiscordOCRBot     # Bot Version
-    from discord_webhook import DiscordOCRBot  # Webhook Version
+    from discord_webhook import DiscordOCRBot
 
     DISCORD_AVAILABLE = True
 except ImportError:
     DISCORD_AVAILABLE = False
-    print("ℹ️  discord.py belum terinstall. Fitur Discord dinonaktifkan.")
-    print("   Install dengan: pip install discord.py")
+    print("ℹ️  discord_bot.py not found or import error")
 
 
 class OCRConfig:
@@ -46,7 +76,7 @@ class OCRConfig:
 class CaptureArea:
     """Manages the screen capture area coordinates"""
 
-    def __init__(self, x=215, y=40, width=973, height=160):
+    def __init__(self, x=215, y=60, width=973, height=160):
         self.x = x
         self.y = y
         self.width = width
@@ -142,11 +172,11 @@ class OCRApp:
 
     def __init__(self, root):
         self.root = root
-        self.root.title("Simple OCR App with Discord")
+        self.root.title("OCR App - PORTABLE")
 
         # Sesuaikan tinggi window berdasarkan ketersediaan Discord
-        height = "520" if DISCORD_AVAILABLE else "350"
-        self.root.geometry(f"450x{height}")
+        height = "515" if DISCORD_AVAILABLE else "400"
+        self.root.geometry(f"500x{height}")
 
         # Initialize components
         self.config = OCRConfig()
@@ -165,25 +195,25 @@ class OCRApp:
         # Build GUI
         self.build_gui()
 
-        # Load saved Discord config
-        self.load_discord_config()
+        # Load saved config
+        self.load_config()
 
-    def load_discord_config(self):
-        """Load Discord token and channel ID from config file"""
+    def load_config(self):
+        """Load all settings from config file"""
         try:
             if os.path.exists(CONFIG_FILE):
                 with open(CONFIG_FILE, "r") as f:
                     config = json.load(f)
 
                 if DISCORD_AVAILABLE:
-                    # Load token and channel ID into GUI
+                    # Load Discord settings
                     if "token" in config and config["token"]:
                         self.token_var.set(config["token"])
-                        print("✅ Discord token loaded from config")
+                        print("✅ Discord webhook/token loaded")
 
                     if "channel_id" in config and config["channel_id"]:
                         self.channel_id_var.set(config["channel_id"])
-                        print("✅ Discord channel ID loaded from config")
+                        print("✅ Channel ID loaded")
 
                 # Load capture area settings
                 if "capture_area" in config:
@@ -200,41 +230,68 @@ class OCRApp:
                     if "height" in area:
                         self.height_var.set(area["height"])
                         self.capture_area.height = area["height"]
-                    print("✅ Capture area settings loaded from config")
+                    print("✅ Capture area settings loaded")
 
         except Exception as e:
             print(f"⚠️  Error loading config: {e}")
 
-    def save_discord_config(self):
-        """Save Discord token and channel ID to config file"""
+    def save_config(self):
+        """Save all settings to config file"""
         try:
-            config = {
-                "token": self.token_var.get().strip(),
-                "channel_id": self.channel_id_var.get().strip(),
-                "capture_area": {
-                    "x": self.x_var.get(),
-                    "y": self.y_var.get(),
-                    "width": self.width_var.get(),
-                    "height": self.height_var.get(),
-                },
+            config = {}
+
+            # Save Discord settings if available
+            if DISCORD_AVAILABLE:
+                config["token"] = self.token_var.get().strip()
+                config["channel_id"] = self.channel_id_var.get().strip()
+
+            # Save capture area
+            config["capture_area"] = {
+                "x": self.x_var.get(),
+                "y": self.y_var.get(),
+                "width": self.width_var.get(),
+                "height": self.height_var.get(),
             }
 
             with open(CONFIG_FILE, "w") as f:
                 json.dump(config, f, indent=2)
 
-            print("✅ Discord config saved")
+            print("✅ Config saved")
         except Exception as e:
             print(f"⚠️  Error saving config: {e}")
 
-    def clear_discord_config(self):
-        """Clear saved Discord config"""
+    def save_capture_area_config(self):
+        """Save only capture area settings"""
         try:
+            # Load existing config
+            config = {}
             if os.path.exists(CONFIG_FILE):
-                # Load config to preserve capture area if user wants
                 with open(CONFIG_FILE, "r") as f:
                     config = json.load(f)
 
-                # Keep capture area, only clear Discord settings
+            # Update capture area
+            config["capture_area"] = {
+                "x": self.x_var.get(),
+                "y": self.y_var.get(),
+                "width": self.width_var.get(),
+                "height": self.height_var.get(),
+            }
+
+            with open(CONFIG_FILE, "w") as f:
+                json.dump(config, f, indent=2)
+
+            print("✅ Capture area saved")
+        except Exception as e:
+            print(f"⚠️  Error saving capture area: {e}")
+
+    def clear_discord_config(self):
+        """Clear Discord settings but keep capture area"""
+        try:
+            if os.path.exists(CONFIG_FILE):
+                with open(CONFIG_FILE, "r") as f:
+                    config = json.load(f)
+
+                # Clear only Discord settings
                 config["token"] = ""
                 config["channel_id"] = ""
 
@@ -306,7 +363,7 @@ class OCRApp:
             settings_frame, text="Update Area", command=self.update_capture_area
         ).grid(row=2, column=0, columnspan=4, pady=10, sticky="ew")
 
-        # Configure grid weights for responsive layout
+        # Configure grid weights
         settings_frame.columnconfigure(1, weight=1)
         settings_frame.columnconfigure(3, weight=1)
 
@@ -327,7 +384,7 @@ class OCRApp:
             )
             token_entry.grid(row=1, column=0, columnspan=2, pady=(0, 10), sticky="ew")
 
-            # Channel ID (optional for webhook)
+            # Channel ID
             ttk.Label(discord_frame, text="Channel ID (optional for webhook):").grid(
                 row=2, column=0, sticky="w", pady=(0, 5)
             )
@@ -364,7 +421,6 @@ class OCRApp:
             )
             self.discord_status.grid(row=5, column=0, columnspan=2, pady=(10, 0))
 
-            # Configure grid
             discord_frame.columnconfigure(0, weight=1)
 
         # Control buttons
@@ -389,7 +445,7 @@ class OCRApp:
         )
         self.overlay_button.pack(side="left", padx=2, fill="x", expand=True)
 
-        # Status label with better styling
+        # Status label
         self.status_label = ttk.Label(
             self.root, text="● Idle", font=("Arial", 10, "bold"), foreground="#666"
         )
@@ -415,107 +471,96 @@ class OCRApp:
         self.overlay.update_position()
         print(f"✅ Capture area updated: {self.capture_area.get_bbox()}")
 
-        # Auto-save capture area settings
+        # Auto-save
         self.save_capture_area_config()
-
-    def save_capture_area_config(self):
-        """Save only capture area settings to config"""
-        try:
-            # Load existing config if exists
-            config = {}
-            if os.path.exists(CONFIG_FILE):
-                with open(CONFIG_FILE, "r") as f:
-                    config = json.load(f)
-
-            # Update capture area
-            config["capture_area"] = {
-                "x": self.x_var.get(),
-                "y": self.y_var.get(),
-                "width": self.width_var.get(),
-                "height": self.height_var.get(),
-            }
-
-            # Save config
-            with open(CONFIG_FILE, "w") as f:
-                json.dump(config, f, indent=2)
-
-            print("✅ Capture area settings saved")
-        except Exception as e:
-            print(f"⚠️  Error saving capture area: {e}")
 
     def toggle_overlay(self):
         """Shows or hides the capture area overlay"""
         if self.overlay.window:
             self.overlay.hide()
-            self.overlay_button.config(text="Show Overlay")
+            self.overlay_button.config(text="👁 Show Overlay")
         else:
             self.overlay.show()
-            self.overlay_button.config(text="Hide Overlay")
+            self.overlay_button.config(text="👁 Hide Overlay")
 
     def connect_discord(self):
-        """Connect to Discord bot"""
+        """Connect to Discord"""
         if not DISCORD_AVAILABLE:
-            print("❌ discord.py belum terinstall!")
+            print("❌ discord_bot.py not available!")
             return
 
-        token = self.token_var.get().strip()
+        credential = self.token_var.get().strip()
         channel_id_str = self.channel_id_var.get().strip()
 
-        if not token or not channel_id_str:
-            print("❌ Token atau Channel ID kosong!")
+        if not credential:
+            print("❌ Webhook URL or Token is empty!")
             self.discord_status.config(
-                text="Discord: Error - Missing info", foreground="red"
+                text="● Error - Missing credential", foreground="red"
             )
             return
 
+        # Detect if webhook or bot token
+        is_webhook = credential.startswith("https://discord.com/api/webhooks/")
+
+        if not is_webhook and not channel_id_str:
+            print("❌ Channel ID required for bot token!")
+            self.discord_status.config(
+                text="● Error - Need Channel ID", foreground="red"
+            )
+            return
+
+        print(f"🔄 Connecting to Discord...")
+
+        # Save config
+        self.save_config()
+
+        # Create Discord bot
         try:
-            channel_id = int(channel_id_str)
+            if is_webhook:
+                self.discord_bot = DiscordOCRBot(credential)
+            else:
+                channel_id = int(channel_id_str)
+                self.discord_bot = DiscordOCRBot(credential, channel_id)
         except ValueError:
-            print("❌ Channel ID harus berupa angka!")
+            print("❌ Invalid Channel ID!")
             self.discord_status.config(
-                text="Discord: Error - Invalid Channel ID", foreground="red"
+                text="● Error - Invalid Channel ID", foreground="red"
             )
             return
-
-        print("🔄 Connecting to Discord...")
-
-        # Save config untuk next time
-        self.save_discord_config()
-
-        # Create Discord bot dari discord_bot.py
-        self.discord_bot = DiscordOCRBot(token, channel_id)
+        except Exception as e:
+            print(f"❌ Error creating Discord bot: {e}")
+            self.discord_status.config(text="● Connection Failed", foreground="red")
+            return
 
         # Start bot in background thread
         def start_bot_thread():
             try:
                 asyncio.run(self.discord_bot.start_bot())
             except Exception as e:
-                print(f"❌ Error starting Discord bot: {e}")
+                print(f"❌ Error starting Discord: {e}")
                 self.root.after(
                     0,
                     lambda: self.discord_status.config(
-                        text="Discord: Connection Failed", foreground="red"
+                        text="● Connection Failed", foreground="red"
                     ),
                 )
 
         threading.Thread(target=start_bot_thread, daemon=True).start()
 
-        # Wait a bit and check status
-        self.root.after(3000, self.check_discord_status)
-        self.discord_status.config(text="Discord: Connecting...", foreground="orange")
+        # Check status
+        self.root.after(2000, self.check_discord_status)
+        self.discord_status.config(text="● Connecting...", foreground="orange")
         self.discord_connect_button.config(state="disabled")
 
     def check_discord_status(self):
-        """Check if Discord bot is connected"""
+        """Check if Discord is connected"""
         if self.discord_bot and self.discord_bot.is_ready:
             self.discord_enabled = True
-            self.discord_status.config(text="Discord: ✅ Connected", foreground="green")
-            print("✅ Discord bot connected successfully!")
+            self.discord_status.config(text="● Connected", foreground="green")
+            print("✅ Discord connected!")
         else:
-            self.discord_status.config(
-                text="Discord: ⏳ Connecting...", foreground="orange"
-            )
-            self.root.after(2000, self.check_discord_status)
+            self.discord_status.config(text="● Connecting...", foreground="orange")
+            self.root.after(1500, self.check_discord_status)
 
     def start_ocr(self):
         """Starts the OCR capture loop"""
@@ -523,14 +568,14 @@ class OCRApp:
             self.is_running = True
             self.start_button.config(state="disabled")
             self.stop_button.config(state="normal")
-            self.status_label.config(text="Status: Running...")
+            self.status_label.config(text="● Running", foreground="green")
 
             # Start capture thread
             self.capture_thread = threading.Thread(target=self.ocr_loop, daemon=True)
             self.capture_thread.start()
 
             print("\n" + "=" * 50)
-            print("OCR Started - Reading from screen...")
+            print("OCR Started")
             if self.discord_enabled:
                 print("Discord: Enabled ✅")
             print("=" * 50 + "\n")
@@ -541,7 +586,7 @@ class OCRApp:
             self.is_running = False
             self.start_button.config(state="normal")
             self.stop_button.config(state="disabled")
-            self.status_label.config(text="Status: Stopped")
+            self.status_label.config(text="● Stopped", foreground="orange")
 
             print("\n" + "=" * 50)
             print("OCR Stopped")
@@ -553,49 +598,50 @@ class OCRApp:
             # Capture and read text
             text = self.ocr_engine.capture_and_read(self.capture_area)
 
-            # Only print if text has changed
+            # Only process if text has changed
             if text and self.ocr_engine.has_text_changed(text):
                 print("\n--- OCR Output ---")
                 print(text)
                 print("------------------\n")
 
-                # Send to Discord if enabled (now synchronous!)
+                # Send to Discord if enabled
                 if self.discord_enabled and self.discord_bot:
                     try:
                         self.discord_bot.send_ocr_result(text)
                     except Exception as e:
-                        print(f"❌ Error queueing Discord message: {e}")
+                        print(f"❌ Error sending to Discord: {e}")
 
             # Wait before next capture
             time.sleep(self.config.capture_interval)
 
     def on_closing(self):
         """Cleanup when closing the application"""
+        print("🔄 Closing application...")
+
+        # Stop OCR
         self.stop_ocr()
+
+        # Hide overlay
         self.overlay.hide()
 
-        # Stop Discord bot if running
+        # Discord cleanup (webhook doesn't need async cleanup)
         if self.discord_bot:
-            try:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                loop.run_until_complete(self.discord_bot.stop_bot())
-                loop.close()
-            except Exception as e:
-                print(f"⚠️ Error stopping Discord bot: {e}")
+            print("🔴 Discord disconnected")
 
+        # Destroy window
         self.root.destroy()
+        print("✅ Application closed")
 
 
 def main():
     """Main entry point"""
     print("=" * 50)
-    print("Simple OCR App with Discord Integration")
+    print("OCR App - PORTABLE VERSION")
     print("=" * 50)
 
     if not DISCORD_AVAILABLE:
-        print("\n⚠️  Discord features tidak tersedia")
-        print("   Install dengan: pip install discord.py\n")
+        print("\n⚠️  Discord features not available")
+        print("   Make sure discord_bot.py is in the same folder\n")
 
     root = tk.Tk()
     app = OCRApp(root)
