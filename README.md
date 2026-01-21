@@ -48,7 +48,7 @@ requests
 #### 2. Install Tesseract OCR
 Download: https://github.com/UB-Mannheim/tesseract/wiki
 
-Atau pakai portable version! (Lihat [Portable Build](#-portable-build))
+Atau pakai portable version! (Lihat [Docs/Portable Build](#-portable-build))
 
 #### 3. Run App
 ```bash
@@ -84,7 +84,7 @@ Webhook URL: https://discord.com/api/webhooks/123.../abc...
 Channel ID: (kosongkan)
 ```
 
-📖 **Tutorial lengkap:** [WEBHOOK_GUIDE.md](WEBHOOK_GUIDE.md)
+📖 **Tutorial lengkap:** [Docs/WEBHOOK_GUIDE.md](Docs/WEBHOOK_GUIDE.md)
 
 ---
 
