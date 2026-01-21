@@ -25,7 +25,8 @@ CONFIG_FILE = "ocr_config.json"
 
 # Import Discord bot (akan gagal secara graceful jika discord.py belum terinstall)
 try:
-    from discord_bot import DiscordOCRBot
+    # from discord_bot import DiscordOCRBot     # Bot Version
+    from discord_webhook import DiscordOCRBot  # Webhook Version
 
     DISCORD_AVAILABLE = True
 except ImportError:
@@ -144,7 +145,7 @@ class OCRApp:
         self.root.title("Simple OCR App with Discord")
 
         # Sesuaikan tinggi window berdasarkan ketersediaan Discord
-        height = "550" if DISCORD_AVAILABLE else "350"
+        height = "530" if DISCORD_AVAILABLE else "350"
         self.root.geometry(f"450x{height}")
 
         # Initialize components
@@ -266,130 +267,142 @@ class OCRApp:
 
         # X Position
         ttk.Label(settings_frame, text="X Position:").grid(
-            row=0, column=0, sticky="w", pady=2
+            row=0, column=0, sticky="w", pady=2, padx=(0, 5)
         )
         self.x_var = tk.IntVar(value=self.capture_area.x)
         ttk.Spinbox(
-            settings_frame, from_=0, to=2000, textvariable=self.x_var, width=10
-        ).grid(row=0, column=1, pady=2)
+            settings_frame, from_=0, to=5000, textvariable=self.x_var, width=12
+        ).grid(row=0, column=1, pady=2, sticky="ew")
 
         # Y Position
         ttk.Label(settings_frame, text="Y Position:").grid(
-            row=1, column=0, sticky="w", pady=2
+            row=0, column=2, sticky="w", pady=2, padx=(15, 5)
         )
         self.y_var = tk.IntVar(value=self.capture_area.y)
         ttk.Spinbox(
-            settings_frame, from_=0, to=2000, textvariable=self.y_var, width=10
-        ).grid(row=1, column=1, pady=2)
+            settings_frame, from_=0, to=5000, textvariable=self.y_var, width=12
+        ).grid(row=0, column=3, pady=2, sticky="ew")
 
         # Width
         ttk.Label(settings_frame, text="Width:").grid(
-            row=2, column=0, sticky="w", pady=2
+            row=1, column=0, sticky="w", pady=2, padx=(0, 5)
         )
         self.width_var = tk.IntVar(value=self.capture_area.width)
         ttk.Spinbox(
-            settings_frame, from_=50, to=2000, textvariable=self.width_var, width=10
-        ).grid(row=2, column=1, pady=2)
+            settings_frame, from_=50, to=5000, textvariable=self.width_var, width=12
+        ).grid(row=1, column=1, pady=2, sticky="ew")
 
         # Height
         ttk.Label(settings_frame, text="Height:").grid(
-            row=3, column=0, sticky="w", pady=2
+            row=1, column=2, sticky="w", pady=2, padx=(15, 5)
         )
         self.height_var = tk.IntVar(value=self.capture_area.height)
         ttk.Spinbox(
-            settings_frame, from_=50, to=2000, textvariable=self.height_var, width=10
-        ).grid(row=3, column=1, pady=2)
+            settings_frame, from_=50, to=5000, textvariable=self.height_var, width=12
+        ).grid(row=1, column=3, pady=2, sticky="ew")
 
-        # Update button
+        # Update button - full width
         ttk.Button(
             settings_frame, text="Update Area", command=self.update_capture_area
-        ).grid(row=4, column=0, columnspan=2, pady=10)
+        ).grid(row=2, column=0, columnspan=4, pady=10, sticky="ew")
 
-        # Discord Settings Frame (hanya muncul jika discord.py tersedia)
+        # Configure grid weights for responsive layout
+        settings_frame.columnconfigure(1, weight=1)
+        settings_frame.columnconfigure(3, weight=1)
+
+        # Discord Settings Frame
         if DISCORD_AVAILABLE:
             discord_frame = ttk.LabelFrame(
-                self.root, text="Discord Settings (Opsional)", padding=10
+                self.root, text="Discord Settings (Optional)", padding=10
             )
             discord_frame.pack(padx=10, pady=5, fill="x")
 
-            # Token
-            ttk.Label(discord_frame, text="Bot Token:").grid(
-                row=0, column=0, sticky="w", pady=2
+            # Webhook URL / Bot Token
+            ttk.Label(discord_frame, text="Webhook URL / Bot Token:").grid(
+                row=0, column=0, sticky="w", pady=(0, 5)
             )
             self.token_var = tk.StringVar()
             token_entry = ttk.Entry(
-                discord_frame, textvariable=self.token_var, width=35, show="*"
+                discord_frame, textvariable=self.token_var, show="*"
             )
-            token_entry.grid(row=0, column=1, pady=2, sticky="ew")
+            token_entry.grid(row=1, column=0, columnspan=2, pady=(0, 10), sticky="ew")
 
-            # Channel ID
-            ttk.Label(discord_frame, text="Channel ID:").grid(
-                row=1, column=0, sticky="w", pady=2
+            # Channel ID (optional for webhook)
+            ttk.Label(discord_frame, text="Channel ID (optional for webhook):").grid(
+                row=2, column=0, sticky="w", pady=(0, 5)
             )
             self.channel_id_var = tk.StringVar()
-            ttk.Entry(discord_frame, textvariable=self.channel_id_var, width=35).grid(
-                row=1, column=1, pady=2, sticky="ew"
+            ttk.Entry(discord_frame, textvariable=self.channel_id_var).grid(
+                row=3, column=0, columnspan=2, pady=(0, 10), sticky="ew"
             )
 
-            # Connect button
+            # Buttons row
+            button_container = ttk.Frame(discord_frame)
+            button_container.grid(
+                row=4, column=0, columnspan=2, pady=(5, 0), sticky="ew"
+            )
+
             self.discord_connect_button = ttk.Button(
-                discord_frame, text="Connect Discord", command=self.connect_discord
+                button_container, text="Connect Discord", command=self.connect_discord
             )
-            self.discord_connect_button.grid(row=2, column=0, columnspan=2, pady=10)
+            self.discord_connect_button.pack(
+                side="left", padx=(0, 5), fill="x", expand=True
+            )
 
-            # Clear config button
             ttk.Button(
-                discord_frame,
-                text="Clear Saved Config",
+                button_container,
+                text="Clear Config",
                 command=self.clear_discord_config,
-            ).grid(row=3, column=0, columnspan=2, pady=2)
+            ).pack(side="left", fill="x", expand=True)
 
             # Discord status
             self.discord_status = ttk.Label(
-                discord_frame, text="Discord: Not Connected", foreground="gray"
+                discord_frame,
+                text="● Not Connected",
+                foreground="gray",
+                font=("Arial", 9),
             )
-            self.discord_status.grid(row=4, column=0, columnspan=2)
+            self.discord_status.grid(row=5, column=0, columnspan=2, pady=(10, 0))
 
-            discord_frame.columnconfigure(1, weight=1)
+            # Configure grid
+            discord_frame.columnconfigure(0, weight=1)
 
         # Control buttons
         button_frame = ttk.Frame(self.root)
-        button_frame.pack(pady=10)
+        button_frame.pack(pady=15, padx=10, fill="x")
 
         self.start_button = ttk.Button(
-            button_frame, text="Start OCR", command=self.start_ocr, width=12
+            button_frame, text="▶ Start OCR", command=self.start_ocr
         )
-        self.start_button.pack(side="left", padx=5)
+        self.start_button.pack(side="left", padx=2, fill="x", expand=True)
 
         self.stop_button = ttk.Button(
             button_frame,
-            text="Stop OCR",
+            text="⏹ Stop OCR",
             command=self.stop_ocr,
             state="disabled",
-            width=12,
         )
-        self.stop_button.pack(side="left", padx=5)
+        self.stop_button.pack(side="left", padx=2, fill="x", expand=True)
 
-        # Show/Hide overlay button
         self.overlay_button = ttk.Button(
-            button_frame, text="Show Overlay", command=self.toggle_overlay, width=12
+            button_frame, text="👁 Show Overlay", command=self.toggle_overlay
         )
-        self.overlay_button.pack(side="left", padx=5)
+        self.overlay_button.pack(side="left", padx=2, fill="x", expand=True)
 
-        # Status label
+        # Status label with better styling
         self.status_label = ttk.Label(
-            self.root, text="Status: Idle", font=("Arial", 10)
+            self.root, text="● Idle", font=("Arial", 10, "bold"), foreground="#666"
         )
-        self.status_label.pack(pady=5)
+        self.status_label.pack(pady=(5, 2))
 
         # Info label
-        info_text = "OCR output di terminal" + (
+        info_text = "OCR output → Terminal" + (
             " & Discord" if DISCORD_AVAILABLE else ""
         )
         info_label = ttk.Label(
-            self.root, text=info_text, font=("Arial", 9), foreground="gray"
+            self.root, text=info_text, font=("Arial", 8), foreground="gray"
         )
-        info_label.pack(pady=5)
+        info_label.pack(pady=(0, 10))
 
     def update_capture_area(self):
         """Updates the capture area with new coordinates"""
@@ -464,7 +477,7 @@ class OCRApp:
             )
             return
 
-        print(f"🔄 Connecting to Discord...")
+        print("🔄 Connecting to Discord...")
 
         # Save config untuk next time
         self.save_discord_config()
@@ -568,8 +581,8 @@ class OCRApp:
                 asyncio.set_event_loop(loop)
                 loop.run_until_complete(self.discord_bot.stop_bot())
                 loop.close()
-            except:
-                pass
+            except Exception as e:
+                print(f"⚠️ Error stopping Discord bot: {e}")
 
         self.root.destroy()
 

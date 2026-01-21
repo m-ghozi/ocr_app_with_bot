@@ -1,3 +1,9 @@
 pytesseract
 Pillow
-discord.py
+requests
+
+# For building EXE (optional)
+pyinstaller
+
+# Optional: Full Discord bot features (not needed if using webhook)
+# discord.py
