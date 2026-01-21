@@ -5,6 +5,8 @@ Works on Windows!
 """
 
 import asyncio
+import json
+import os
 import sys
 import threading
 import time
@@ -17,6 +19,9 @@ from PIL import ImageGrab
 # Windows-specific: Set tesseract path if needed
 # Uncomment and adjust path if you get "tesseract not found" error
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
+# Config file untuk menyimpan Discord settings
+CONFIG_FILE = "ocr_config.json"
 
 # Import Discord bot (akan gagal secara graceful jika discord.py belum terinstall)
 try:
@@ -159,6 +164,58 @@ class OCRApp:
         # Build GUI
         self.build_gui()
 
+        # Load saved Discord config
+        self.load_discord_config()
+
+    def load_discord_config(self):
+        """Load Discord token and channel ID from config file"""
+        try:
+            if os.path.exists(CONFIG_FILE):
+                with open(CONFIG_FILE, "r") as f:
+                    config = json.load(f)
+
+                if DISCORD_AVAILABLE:
+                    # Load token and channel ID into GUI
+                    if "token" in config and config["token"]:
+                        self.token_var.set(config["token"])
+                        print("✅ Discord token loaded from config")
+
+                    if "channel_id" in config and config["channel_id"]:
+                        self.channel_id_var.set(config["channel_id"])
+                        print("✅ Discord channel ID loaded from config")
+        except Exception as e:
+            print(f"⚠️  Error loading config: {e}")
+
+    def save_discord_config(self):
+        """Save Discord token and channel ID to config file"""
+        try:
+            config = {
+                "token": self.token_var.get().strip(),
+                "channel_id": self.channel_id_var.get().strip(),
+            }
+
+            with open(CONFIG_FILE, "w") as f:
+                json.dump(config, f, indent=2)
+
+            print("✅ Discord config saved")
+        except Exception as e:
+            print(f"⚠️  Error saving config: {e}")
+
+    def clear_discord_config(self):
+        """Clear saved Discord config"""
+        try:
+            if os.path.exists(CONFIG_FILE):
+                os.remove(CONFIG_FILE)
+                print("✅ Config file deleted")
+
+            # Clear GUI fields
+            self.token_var.set("")
+            self.channel_id_var.set("")
+
+            print("✅ Discord config cleared")
+        except Exception as e:
+            print(f"⚠️  Error clearing config: {e}")
+
     def build_gui(self):
         """Constructs the GUI elements"""
         # Title
@@ -246,11 +303,18 @@ class OCRApp:
             )
             self.discord_connect_button.grid(row=2, column=0, columnspan=2, pady=10)
 
+            # Clear config button
+            ttk.Button(
+                discord_frame,
+                text="Clear Saved Config",
+                command=self.clear_discord_config,
+            ).grid(row=3, column=0, columnspan=2, pady=2)
+
             # Discord status
             self.discord_status = ttk.Label(
                 discord_frame, text="Discord: Not Connected", foreground="gray"
             )
-            self.discord_status.grid(row=3, column=0, columnspan=2)
+            self.discord_status.grid(row=4, column=0, columnspan=2)
 
             discord_frame.columnconfigure(1, weight=1)
 
@@ -338,7 +402,10 @@ class OCRApp:
             )
             return
 
-        print("🔄 Connecting to Discord...")
+        print(f"🔄 Connecting to Discord...")
+
+        # Save config untuk next time
+        self.save_discord_config()
 
         # Create Discord bot dari discord_bot.py
         self.discord_bot = DiscordOCRBot(token, channel_id)
