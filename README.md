@@ -343,7 +343,6 @@ pip install requests
 - **[WEBHOOK_GUIDE.md](WEBHOOK_GUIDE.md)** - Setup Discord webhook
 - **[PORTABLE_README.md](PORTABLE_README.md)** - Portable build quick guide
 - **[TRY_NOW.md](TRY_NOW.md)** - Try portable build sekarang
-- **[SIZE_OPTIMIZATION_GUIDE.md](SIZE_OPTIMIZATION_GUIDE.md)** - Cara optimize size
 - **[AUTO_SAVE_CONFIG.md](AUTO_SAVE_CONFIG.md)** - Auto-save feature explained
 
 ---
@@ -351,7 +350,7 @@ pip install requests
 ## 🎯 Use Cases
 
 ### Gaming
-- Baca quest text otomatis
+- Baca quest text otomatis (THIS)
 - Translate game text real-time
 - Log dialog/story ke Discord
 
