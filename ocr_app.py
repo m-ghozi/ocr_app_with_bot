@@ -183,6 +183,24 @@ class OCRApp:
                     if "channel_id" in config and config["channel_id"]:
                         self.channel_id_var.set(config["channel_id"])
                         print("✅ Discord channel ID loaded from config")
+
+                # Load capture area settings
+                if "capture_area" in config:
+                    area = config["capture_area"]
+                    if "x" in area:
+                        self.x_var.set(area["x"])
+                        self.capture_area.x = area["x"]
+                    if "y" in area:
+                        self.y_var.set(area["y"])
+                        self.capture_area.y = area["y"]
+                    if "width" in area:
+                        self.width_var.set(area["width"])
+                        self.capture_area.width = area["width"]
+                    if "height" in area:
+                        self.height_var.set(area["height"])
+                        self.capture_area.height = area["height"]
+                    print("✅ Capture area settings loaded from config")
+
         except Exception as e:
             print(f"⚠️  Error loading config: {e}")
 
@@ -192,6 +210,12 @@ class OCRApp:
             config = {
                 "token": self.token_var.get().strip(),
                 "channel_id": self.channel_id_var.get().strip(),
+                "capture_area": {
+                    "x": self.x_var.get(),
+                    "y": self.y_var.get(),
+                    "width": self.width_var.get(),
+                    "height": self.height_var.get(),
+                },
             }
 
             with open(CONFIG_FILE, "w") as f:
@@ -205,14 +229,24 @@ class OCRApp:
         """Clear saved Discord config"""
         try:
             if os.path.exists(CONFIG_FILE):
-                os.remove(CONFIG_FILE)
-                print("✅ Config file deleted")
+                # Load config to preserve capture area if user wants
+                with open(CONFIG_FILE, "r") as f:
+                    config = json.load(f)
+
+                # Keep capture area, only clear Discord settings
+                config["token"] = ""
+                config["channel_id"] = ""
+
+                with open(CONFIG_FILE, "w") as f:
+                    json.dump(config, f, indent=2)
+
+                print("✅ Discord config cleared (capture area preserved)")
 
             # Clear GUI fields
-            self.token_var.set("")
-            self.channel_id_var.set("")
+            if DISCORD_AVAILABLE:
+                self.token_var.set("")
+                self.channel_id_var.set("")
 
-            print("✅ Discord config cleared")
         except Exception as e:
             print(f"⚠️  Error clearing config: {e}")
 
@@ -367,6 +401,34 @@ class OCRApp:
         )
         self.overlay.update_position()
         print(f"✅ Capture area updated: {self.capture_area.get_bbox()}")
+
+        # Auto-save capture area settings
+        self.save_capture_area_config()
+
+    def save_capture_area_config(self):
+        """Save only capture area settings to config"""
+        try:
+            # Load existing config if exists
+            config = {}
+            if os.path.exists(CONFIG_FILE):
+                with open(CONFIG_FILE, "r") as f:
+                    config = json.load(f)
+
+            # Update capture area
+            config["capture_area"] = {
+                "x": self.x_var.get(),
+                "y": self.y_var.get(),
+                "width": self.width_var.get(),
+                "height": self.height_var.get(),
+            }
+
+            # Save config
+            with open(CONFIG_FILE, "w") as f:
+                json.dump(config, f, indent=2)
+
+            print("✅ Capture area settings saved")
+        except Exception as e:
+            print(f"⚠️  Error saving capture area: {e}")
 
     def toggle_overlay(self):
         """Shows or hides the capture area overlay"""
