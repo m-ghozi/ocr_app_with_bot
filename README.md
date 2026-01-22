@@ -48,7 +48,7 @@ requests
 #### 2. Install Tesseract OCR
 Download: https://github.com/UB-Mannheim/tesseract/wiki
 
-Atau pakai portable version! (Lihat [Docs/Portable Build](#-portable-build))
+Atau pakai portable version! (Lihat [Portable Build](#-portable-build))
 
 #### 3. Run App
 ```bash
@@ -84,7 +84,7 @@ Webhook URL: https://discord.com/api/webhooks/123.../abc...
 Channel ID: (kosongkan)
 ```
 
-📖 **Tutorial lengkap:** [Docs/WEBHOOK_GUIDE.md](Docs/WEBHOOK_GUIDE.md)
+📖 **Tutorial lengkap:** [WEBHOOK_GUIDE.md](Docs/WEBHOOK_GUIDE.md)
 
 ---
 
@@ -127,12 +127,10 @@ Channel ID: 123456789012345678
 │
 ├── 🛠️ copy_tesseract.bat           # Auto-copy Tesseract untuk portable
 ├── 🛠️ test_portable_tesseract.py   # Test portable setup
-├── 🛠️ build_portable.bat           # Build portable EXE
 │
 └── 📚 Docs/
     ├── WEBHOOK_GUIDE.md             # Setup Discord webhook
     ├── PORTABLE_README.md           # Portable build guide
-    ├── SIZE_OPTIMIZATION_GUIDE.md   # Size optimization tips
     └── TRY_NOW.md                   # Quick start portable
 ```
 
@@ -194,7 +192,7 @@ dist/
 
 **Total: ~100 MB** (normal untuk OCR app!)
 
-📖 **Panduan lengkap:** [PORTABLE_README.md](PORTABLE_README.md) & [TRY_NOW.md](TRY_NOW.md)
+📖 **Panduan lengkap:** [PORTABLE_README.md](Docs/PORTABLE_README.md) & [TRY_NOW.md](Docs/TRY_NOW.md)
 
 ---
 
@@ -313,13 +311,6 @@ pip install requests
 | **RAM Usage** | ~50-100 MB |
 | **CPU Usage** | Low (~5-10%) |
 
-**Comparison:**
-- Discord App: ~100 MB
-- VS Code: ~150 MB
-- Adobe Acrobat: ~500 MB
-
-**→ Your OCR app is actually SMALL!** ✅
-
 ---
 
 ## 🔐 Security & Privacy
@@ -340,17 +331,17 @@ pip install requests
 
 ## 📚 Documentation
 
-- **[WEBHOOK_GUIDE.md](WEBHOOK_GUIDE.md)** - Setup Discord webhook
-- **[PORTABLE_README.md](PORTABLE_README.md)** - Portable build quick guide
-- **[TRY_NOW.md](TRY_NOW.md)** - Try portable build sekarang
-- **[AUTO_SAVE_CONFIG.md](AUTO_SAVE_CONFIG.md)** - Auto-save feature explained
+- **[WEBHOOK_GUIDE.md](Docs/WEBHOOK_GUIDE.md)** - Setup Discord webhook
+- **[PORTABLE_README.md](Docs/PORTABLE_README.md)** - Portable build quick guide
+- **[TRY_NOW.md](Docs/TRY_NOW.md)** - Try portable build sekarang
+- **[AUTO_SAVE_CONFIG.md](Docs/AUTO_SAVE_CONFIG.md)** - Auto-save feature explained
 
 ---
 
 ## 🎯 Use Cases
 
 ### Gaming
-- Baca quest text otomatis (THIS)
+- Baca event text otomatis (**THIS**)
 - Translate game text real-time
 - Log dialog/story ke Discord
 
@@ -427,19 +418,6 @@ MIT License - Free to use, modify, and distribute!
 
 ---
 
-## 📞 Support
-
-**Need help?**
-- Check [Troubleshooting](#-troubleshooting)
-- Read documentation in `Docs/`
-- Review code comments
-
-**Found a bug?**
-- Describe the issue
-- Include steps to reproduce
-- Share error messages
-
----
 
 ## ⭐ Quick Links
 
