@@ -16,6 +16,15 @@ from tkinter import ttk
 import pytesseract
 from PIL import ImageGrab
 
+# Import OCR Filter
+try:
+    from ocr_filter import OCRFilter
+
+    FILTER_AVAILABLE = True
+except ImportError:
+    FILTER_AVAILABLE = False
+    print("ℹ️  ocr_filter.py not found, filtering disabled")
+
 
 # Auto-detect Tesseract path (portable or installed)
 def get_tesseract_path():
@@ -175,8 +184,8 @@ class OCRApp:
         self.root.title("OCR App - PORTABLE")
 
         # Sesuaikan tinggi window berdasarkan ketersediaan Discord
-        height = "515" if DISCORD_AVAILABLE else "400"
-        self.root.geometry(f"500x{height}")
+        height = "590" if DISCORD_AVAILABLE else "400"
+        self.root.geometry(f"410x{height}")
 
         # Initialize components
         self.config = OCRConfig()
@@ -187,6 +196,14 @@ class OCRApp:
         # Discord bot components
         self.discord_bot = None
         self.discord_enabled = False
+
+        # Initialize OCR Filter
+        if FILTER_AVAILABLE:
+            self.ocr_filter = OCRFilter()
+            self.ocr_filter.enable_file_output("ocr_output.txt")
+            print("✅ OCR Filter initialized")
+        else:
+            self.ocr_filter = None
 
         # State variables
         self.is_running = False
@@ -423,6 +440,35 @@ class OCRApp:
 
             discord_frame.columnconfigure(0, weight=1)
 
+        # Filter Settings Frame
+        if FILTER_AVAILABLE:
+            filter_frame = ttk.LabelFrame(
+                self.root, text="Filter Settings (Optional)", padding=10
+            )
+            filter_frame.pack(padx=10, pady=5, fill="x")
+
+            # Filter mode
+            ttk.Label(filter_frame, text="Filter Mode:").grid(
+                row=0, column=0, sticky="w", pady=2
+            )
+            self.filter_mode_var = tk.StringVar(value="smart")
+            ttk.Combobox(
+                filter_frame,
+                textvariable=self.filter_mode_var,
+                values=["smart", "all", "important", "lines"],
+                state="readonly",
+                width=15,
+            ).grid(row=0, column=1, pady=2, sticky="w")
+
+            # Save to file checkbox
+            self.save_to_file_var = tk.BooleanVar(value=True)
+            ttk.Checkbutton(
+                filter_frame,
+                text="Save to file (ocr_output.txt)",
+                variable=self.save_to_file_var,
+                command=self.toggle_file_output,
+            ).grid(row=0, column=2, columnspan=2, sticky="w", pady=0, padx=20)
+
         # Control buttons
         button_frame = ttk.Frame(self.root)
         button_frame.pack(pady=15, padx=10, fill="x")
@@ -449,7 +495,7 @@ class OCRApp:
         self.status_label = ttk.Label(
             self.root, text="● Idle", font=("Arial", 10, "bold"), foreground="#666"
         )
-        self.status_label.pack(pady=(5, 2))
+        self.status_label.pack(pady=(5, 1))
 
         # Info label
         info_text = "OCR output → Terminal" + (
@@ -600,16 +646,41 @@ class OCRApp:
 
             # Only process if text has changed
             if text and self.ocr_engine.has_text_changed(text):
-                print("\n--- OCR Output ---")
+                print("\n--- OCR Output (Raw) ---")
                 print(text)
-                print("------------------\n")
 
-                # Send to Discord if enabled
-                if self.discord_enabled and self.discord_bot:
-                    try:
-                        self.discord_bot.send_ocr_result(text)
-                    except Exception as e:
-                        print(f"❌ Error sending to Discord: {e}")
+                # Apply filter if available
+                if self.ocr_filter:
+                    should_send, filtered_text, reason = self.ocr_filter.filter(
+                        text,
+                        mode="smart",  # Options: 'smart', 'all', 'important', 'lines'
+                    )
+
+                    if should_send:
+                        print(f"✅ {reason}")
+                        print("--- Filtered Output ---")
+                        print(filtered_text)
+                        print("----------------------\n")
+
+                        # Send to Discord if enabled
+                        if self.discord_enabled and self.discord_bot:
+                            try:
+                                self.discord_bot.send_ocr_result(filtered_text)
+                            except Exception as e:
+                                print(f"❌ Error sending to Discord: {e}")
+                    else:
+                        print(f"❌ {reason}")
+                        print("----------------------\n")
+                else:
+                    # No filter - send as is
+                    print("------------------\n")
+
+                    # Send to Discord if enabled
+                    if self.discord_enabled and self.discord_bot:
+                        try:
+                            self.discord_bot.send_ocr_result(text)
+                        except Exception as e:
+                            print(f"❌ Error sending to Discord: {e}")
 
             # Wait before next capture
             time.sleep(self.config.capture_interval)
@@ -631,6 +702,13 @@ class OCRApp:
         # Destroy window
         self.root.destroy()
         print("✅ Application closed")
+
+    def toggle_file_output(self):
+        """Toggle file output"""
+        if self.save_to_file_var.get():
+            self.ocr_filter.enable_file_output()
+        else:
+            self.ocr_filter.disable_file_output()
 
 
 def main():
